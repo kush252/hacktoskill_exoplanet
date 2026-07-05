@@ -2,9 +2,11 @@ import os
 import time
 import json
 import csv
+import warnings
+warnings.filterwarnings("ignore")
 import torch
 import torch.nn as nn
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from tqdm import tqdm
 
 import sys
@@ -157,12 +159,12 @@ class TrainingPipeline:
             
             optimizer.zero_grad()
             
-            with autocast(enabled=True):
+            with autocast(device_type=self.device.type, enabled=True):
                 outputs = model(
                     x_global=x,
                     x_local=x,
                     global_key_padding_mask=g_mask,
-                    local_key_padding_mask=l_mask
+                    local_key_padding_mask=None
                 )
                 loss = criterion(outputs, labels)
                 
@@ -194,12 +196,12 @@ class TrainingPipeline:
         for x, g_mask, l_mask, labels in pbar:
             x, g_mask, l_mask, labels = x.to(self.device), g_mask.to(self.device), l_mask.to(self.device), labels.to(self.device)
             
-            with autocast(enabled=True):
+            with autocast(device_type=self.device.type, enabled=True):
                 outputs = model(
                     x_global=x,
                     x_local=x,
                     global_key_padding_mask=g_mask,
-                    local_key_padding_mask=l_mask
+                    local_key_padding_mask=None
                 )
                 loss = criterion(outputs, labels)
                 
@@ -227,7 +229,9 @@ class TrainingPipeline:
         optimizer = torch.optim.AdamW(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.num_epochs)
         criterion = nn.CrossEntropyLoss()
-        scaler = GradScaler(enabled=True)
+        
+        # Use 'cuda' if available, else 'cpu' for GradScaler
+        scaler = GradScaler(self.device.type, enabled=True)
         
         self.load_checkpoint(model, optimizer, scheduler, scaler)
         
