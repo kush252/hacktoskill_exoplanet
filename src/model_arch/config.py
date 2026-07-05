@@ -30,5 +30,5 @@ class LocalBranchConfig:
 class ModelConfig:
     global_cfg: GlobalBranchConfig = field(default_factory=GlobalBranchConfig)
     local_cfg: LocalBranchConfig = field(default_factory=LocalBranchConfig)
-    num_classes: int = 1
+    num_classes: int = 3
     fusion_dropout: float = 0.1
