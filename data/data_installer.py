@@ -11,9 +11,11 @@ from lightkurve import search_lightcurve
 
 KOI_FILE = "data/cum_koi_table.csv"
 
-N_PER_CLASS = 100
+N_PER_CLASS = 1000
+MIN_SEQUENCE_LENGTH = 50000
+MIN_OBSERVATION_SPAN = 1000
 
-DATASET_DIR = Path("dataset")
+DATASET_DIR = Path("final_dataset")
 
 CLASSES = [
     "CONFIRMED",
@@ -87,6 +89,9 @@ def download_star(row, max_retries=3):
             )
 
             time = np.asarray(lc.time.value)
+
+            if len(time) < MIN_SEQUENCE_LENGTH or (time[-1] - time[0]) < MIN_OBSERVATION_SPAN:
+                return "rejected"
 
             flux = np.asarray(lc.flux.value)
 
