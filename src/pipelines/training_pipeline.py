@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torch.amp import autocast, GradScaler
 from tqdm import tqdm
-
+import argparse
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from model_arch.architecture import ExoplanetModel
@@ -104,7 +104,7 @@ class TrainingPipeline:
         
         print(f"Resuming from checkpoint: {ckpt_path}")
         try:
-            checkpoint = torch.load(ckpt_path, map_location=self.device)
+            checkpoint = torch.load(ckpt_path, map_location=self.device, weights_only=False)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -279,9 +279,46 @@ class TrainingPipeline:
 
 
 if __name__ == "__main__":
-    pipeline = TrainingPipeline(
-        dataset_root=os.path.join(os.path.dirname(__file__), '..', '..', 'dataset'),
-        batch_size=2, # Small batch size for large sequence length
-        num_epochs=10
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--dataset_root",
+        type=str,
+        default=os.path.join(os.path.dirname(__file__), "..", "..", "dataset")
     )
+
+    parser.add_argument(
+        "--checkpoint_dir",
+        type=str,
+        default="checkpoints"
+    )
+
+    parser.add_argument(
+        "--metrics_dir",
+        type=str,
+        default="metrics"
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=2
+    )
+
+    parser.add_argument(
+        "--num_epochs",
+        type=int,
+        default=10
+    )
+
+    args = parser.parse_args()
+
+    pipeline = TrainingPipeline(
+        dataset_root=args.dataset_root,
+        checkpoint_dir=args.checkpoint_dir,
+        metrics_dir=args.metrics_dir,
+        batch_size=args.batch_size,
+        num_epochs=args.num_epochs,
+    )
+
     pipeline.run()
