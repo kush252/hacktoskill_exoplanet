@@ -4,7 +4,7 @@ from ..utils.layers import Conv1DBlock
 from ..utils.tensor_ops import transpose_for_conv1d, transpose_for_transformer
 
 class MultiScaleCNN(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, kernel_sizes: list, dropout: float = 0.1, downsample_factor: int = 8):
+    def __init__(self, in_channels: int, out_channels: int, kernel_sizes: list, dropout: float = 0.1, downsample_factor: int = 16):
         super().__init__()
         self.branches = nn.ModuleList([
             Conv1DBlock(in_channels, out_channels, k, padding=k//2) for k in kernel_sizes

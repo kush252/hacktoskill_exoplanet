@@ -3,6 +3,7 @@ from typing import List
 
 @dataclass
 class GlobalBranchConfig:
+    downsample_factor: int = 16
     in_channels: int = 1
     d_model: int = 64
     cnn_kernel_sizes: List[int] = field(default_factory=lambda: [3, 5, 7])
