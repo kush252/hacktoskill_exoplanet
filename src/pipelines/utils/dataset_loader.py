@@ -89,10 +89,7 @@ def pad_collate_fn(batch: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor,
     lengths = [x.size(0) for x in xs]
     max_len = max(lengths)
     
-    # Ensure max_len is divisible by 8 so that downsampled mask is exact
-    downsample_factor = 8
-    if max_len % downsample_factor != 0:
-        max_len = max_len + (downsample_factor - (max_len % downsample_factor))
+    # No need to make max_len divisible by downsample_factor here; handled by the model.
     
     # Pad tensors to max_len
     padded_xs = []
@@ -117,12 +114,11 @@ def pad_collate_fn(batch: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor,
             local_mask[seq_len:] = True
         local_masks.append(local_mask)
         
-        # Global mask requires downsampling by factor of 8
-        downsampled_max_len = max_len // downsample_factor
-        downsampled_seq_len = seq_len // downsample_factor
-        global_mask = torch.zeros(downsampled_max_len, dtype=torch.bool)
-        if downsampled_max_len > downsampled_seq_len:
-            global_mask[downsampled_seq_len:] = True
+        # Global mask requires downsampling which is now handled automatically in the model.
+        # We supply the full-resolution padding mask.
+        global_mask = torch.zeros(max_len, dtype=torch.bool)
+        if pad_size > 0:
+            global_mask[seq_len:] = True
         global_masks.append(global_mask)
         
     padded_xs = torch.stack(padded_xs)

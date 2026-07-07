@@ -77,6 +77,17 @@ class ExoplanetModel(nn.Module):
             x_local = x_global
             
         g_feat = self.global_cnn(x_global)
+        
+        if global_key_padding_mask is not None and getattr(self.global_cnn, 'downsample_factor', 1) > 1:
+            # Downsample the boolean mask to match the downsampled sequence length
+            # Invert mask: 1.0 for valid (False), 0.0 for padding (True)
+            float_mask = global_key_padding_mask.unsqueeze(1).float()
+            inverted_mask = 1.0 - float_mask
+            # Pool it the same way the CNN pools features
+            pooled_inverted = self.global_cnn.pool(inverted_mask)
+            # Revert mask: True if all elements in the window were padding (True)
+            global_key_padding_mask = (1.0 - pooled_inverted).bool().squeeze(1)
+            
         g_feat = self.global_encoder(g_feat, src_mask=global_mask, src_key_padding_mask=global_key_padding_mask)
         g_rep = self.global_pool(g_feat)
 
