@@ -231,6 +231,7 @@ class TrainingPipeline:
                 batch_size=self.batch_size,
                 shuffle=True,
                 num_workers=0,
+                collate_fn=train_loader.collate_fn,
             )
 
             stats["train_size"] = 10
