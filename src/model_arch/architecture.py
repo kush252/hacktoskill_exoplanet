@@ -79,17 +79,20 @@ class ExoplanetModel(nn.Module):
         g_feat = self.global_cnn(x_global)
         
         if global_key_padding_mask is not None and getattr(self.global_cnn, 'downsample_factor', 1) > 1:
-            # Downsample the boolean mask to match the downsampled sequence length
-            # Invert mask: 1.0 for valid (False), 0.0 for padding (True)
+            # Downsample the boolean mask using F.interpolate to match g_feat exactly
             float_mask = global_key_padding_mask.unsqueeze(1).float()
-            inverted_mask = 1.0 - float_mask
-            # Pool it the same way the CNN pools features
-            pooled_inverted = self.global_cnn.pool(inverted_mask)
-            # Revert mask: True if all elements in the window were padding (True)
-            global_key_padding_mask = (1.0 - pooled_inverted).bool().squeeze(1)
+            
+            # g_feat shape is [batch_size, d_model, downsampled_seq_len] before transpose, 
+            # but wait, g_feat is already transposed to [batch_size, seq_len, d_model]
+            target_len = g_feat.size(1)
+            import torch.nn.functional as F
+            pooled_float_mask = F.interpolate(float_mask, size=target_len, mode='nearest')
+            
+            # Revert mask: True for padding
+            global_key_padding_mask = pooled_float_mask.bool().squeeze(1)
             
         g_feat = self.global_encoder(g_feat, src_mask=global_mask, src_key_padding_mask=global_key_padding_mask)
-        g_rep = self.global_pool(g_feat)
+        g_rep = self.global_pool(g_feat, mask=global_key_padding_mask)
 
         tpn_scores = self.tpn(x_local)
         l_windows = self.window_extractor(x_local, tpn_scores)
@@ -101,7 +104,7 @@ class ExoplanetModel(nn.Module):
         # but for simplicity we assume local_mask and local_key_padding_mask are already shaped for the windows if provided.
         # Often, local windows don't have padding since they are fixed size.
         l_feat = self.local_encoder(l_windows, src_mask=local_mask, src_key_padding_mask=local_key_padding_mask)
-        l_feat = self.local_pool(l_feat)
+        l_feat = self.local_pool(l_feat, mask=local_key_padding_mask)
         
         # We can also pass masks to PRT if necessary, but typically PRT reasons over top_k without padding
         # unless top_k varies per batch, which is not the case here.

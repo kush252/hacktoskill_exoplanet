@@ -26,4 +26,8 @@ class WindowExtractor(nn.Module):
         b_idx = torch.arange(batch_size, device=x.device).view(-1, 1, 1)
         windows = x[b_idx, window_indices] # shape: [batch_size, top_k, window_size, d_model]
         
+        # Soft-Attention: multiply the windows by their corresponding TPN score
+        # This provides a differentiable path so gradients can flow into the TPN
+        windows = windows * topk_scores.unsqueeze(-1).unsqueeze(-1)
+        
         return windows

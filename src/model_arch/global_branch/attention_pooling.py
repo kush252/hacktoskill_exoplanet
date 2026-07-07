@@ -7,10 +7,13 @@ class AttentionPooling(nn.Module):
         self.attention = nn.Sequential(
             nn.Linear(d_model, d_model // 2),
             nn.Tanh(),
-            nn.Linear(d_model // 2, 1),
-            nn.Softmax(dim=1)
+            nn.Linear(d_model // 2, 1)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        weights = self.attention(x)
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
+        scores = self.attention(x)
+        if mask is not None:
+            # mask is True for padding tokens
+            scores = scores.masked_fill(mask.unsqueeze(-1), -1e9)
+        weights = torch.softmax(scores, dim=1)
         return torch.sum(x * weights, dim=1)

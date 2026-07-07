@@ -9,13 +9,16 @@ class TransformerEncoderBlock(nn.Module):
         self.attention = nn.MultiheadAttention(d_model, num_heads, dropout=dropout, batch_first=True)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
-        self.ff = ResidualBlock(FeedForward(d_model, d_ff, dropout))
+        self.ff = FeedForward(d_model, d_ff, dropout)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor, src_mask=None, src_key_padding_mask=None) -> torch.Tensor:
-        attn_out, _ = self.attention(x, x, x, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)
-        x = self.norm1(x + self.dropout(attn_out))
-        x = self.norm2(self.ff(x))
+        norm_x = self.norm1(x)
+        attn_out, _ = self.attention(norm_x, norm_x, norm_x, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)
+        x = x + self.dropout(attn_out)
+        
+        norm_x2 = self.norm2(x)
+        x = x + self.dropout(self.ff(norm_x2))
         return x
 
 class GlobalTransformerEncoder(nn.Module):
