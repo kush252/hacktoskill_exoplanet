@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from model_arch.architecture import ExoplanetModel
 from model_arch.config import ModelConfig
 from pipelines.utils.dataset_loader import get_dataloaders
-
+from torch.utils.data import Subset, DataLoader
 
 class TrainingPipeline:
     def __init__(
@@ -220,6 +220,20 @@ class TrainingPipeline:
             batch_size=self.batch_size,
             seed=self.seed
         )
+
+
+
+        DEBUG_OVERFIT = True
+
+        if DEBUG_OVERFIT:
+            train_loader = DataLoader(
+                Subset(train_loader.dataset, range(10)),
+                batch_size=self.batch_size,
+                shuffle=True,
+                num_workers=0,
+            )
+
+            stats["train_size"] = 10
         
         config = ModelConfig()
         model = ExoplanetModel(config).to(self.device)
