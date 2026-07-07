@@ -9,7 +9,7 @@ class GlobalBranchConfig:
     cnn_kernel_sizes: List[int] = field(default_factory=lambda: [3, 5, 7])
     num_heads: int = 4
     d_ff: int = 256
-    num_layers: int = 3
+    num_layers: int = 5
     dropout: float = 0.1
     max_seq_len: int = 10000
 
@@ -23,7 +23,7 @@ class LocalBranchConfig:
     d_model: int = 64
     num_heads: int = 4
     d_ff: int = 256
-    num_layers: int = 2
+    num_layers: int = 4
     prt_num_layers: int = 2
     dropout: float = 0.1
 
