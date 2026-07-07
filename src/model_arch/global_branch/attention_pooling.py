@@ -14,6 +14,6 @@ class AttentionPooling(nn.Module):
         scores = self.attention(x)
         if mask is not None:
             # mask is True for padding tokens
-            scores = scores.masked_fill(mask.unsqueeze(-1), -1e9)
+            scores = scores.masked_fill(mask.unsqueeze(-1), float('-inf'))
         weights = torch.softmax(scores, dim=1)
         return torch.sum(x * weights, dim=1)
